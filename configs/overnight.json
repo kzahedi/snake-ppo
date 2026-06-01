@@ -1,0 +1,20 @@
+{
+  "grid_size": 32,
+  "num_envs": 256,
+  "total_steps": 200000000,
+  "steps_per_rollout": 128,
+  "ppo_epochs": 4,
+  "mini_batch_size": 4096,
+  "lr": 3e-4,
+  "gamma": 0.99,
+  "gae_lambda": 0.95,
+  "clip_eps": 0.2,
+  "entropy_coef": 0.01,
+  "value_coef": 0.5,
+  "max_grad_norm": 0.5,
+  "checkpoint_every": 500000,
+  "render_resolution": 800,
+  "keep_videos": true,
+  "entropy_floor": 0.05,
+  "entropy_floor_step_threshold": 10000000
+}
