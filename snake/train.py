@@ -20,6 +20,7 @@ from snake.env import VectorizedSnakeEnv
 from snake.network import ActorCritic
 from snake.ppo import PPOTrainer, RolloutBuffer
 from snake.recorder import VideoExporter
+from snake.thermal import ThermalGuard
 
 
 # ANSI colours (disabled when output is not a terminal)
@@ -35,6 +36,15 @@ class _C:
     R = "\033[0m" if on else ""
 
 
+def _reward_summary(cfg) -> str:
+    parts = ["+1/−1"]
+    if cfg.get("length_reward_coef", 0.0) > 0:
+        parts.append(f"+{cfg['length_reward_coef']}·fill")
+    if cfg.get("step_penalty", 0.0) > 0:
+        parts.append(f"−{cfg['step_penalty']}/step")
+    return "  ".join(parts)
+
+
 def _banner(cfg, run_dir, total_iters, device, shaping_coef, preview_every):
     H = W = cfg["grid_size"]
     N = cfg["num_envs"]
@@ -48,10 +58,13 @@ def _banner(cfg, run_dir, total_iters, device, shaping_coef, preview_every):
         ("optim", f"lr {cfg['lr']:.1e}   γ {cfg['gamma']}   λ {cfg['gae_lambda']}"),
         ("ppo", f"clip {cfg['clip_eps']}   epochs {cfg['ppo_epochs']}   "
                 f"ent {cfg['entropy_coef']}"),
+        ("reward", _reward_summary(cfg)),
         ("shaping", f"{shaping_coef}  (free-space connectivity)"
                     if shaping_coef > 0 else "off"),
         ("preview", f"every {preview_every:,} iters → preview.mp4"
                     if preview_every else "off"),
+        ("thermal", "guard on (pause if throttled)"
+                    if cfg.get("thermal_guard", True) else "off"),
         ("device", str(device)),
         ("run dir", str(run_dir)),
     ]
@@ -142,9 +155,19 @@ def main():
 
     env = VectorizedSnakeEnv(H, W, N)
     shaping_coef = cfg.get("shaping_coef", 0.0)
+    length_reward_coef = cfg.get("length_reward_coef", 0.0)
+    step_penalty = cfg.get("step_penalty", 0.0)
+    cells = float(H * W)
     env.compute_shaping = shaping_coef > 0
     obs = env.observation()
     buf = RolloutBuffer(T, N, H, W)
+
+    thermal = ThermalGuard(
+        enabled=cfg.get("thermal_guard", True),
+        check_every=cfg.get("thermal_check_every", 25),
+        cooldown_s=cfg.get("thermal_cooldown_s", 30),
+        pause_limit=cfg.get("thermal_pause_limit", 90),
+    )
 
     # Iteration accounting + rolling-preview cadence.
     # An "iteration" is one rollout + PPO update (T*N env steps). Round the
@@ -189,8 +212,16 @@ def main():
             next_obs, rewards, dones = env.step(actions)
 
             # Raw reward drives the interpretable metric (apples eaten);
-            # shaped reward (raw + connectivity bonus) drives learning.
+            # shaped reward drives learning. Terms (all config-gated):
+            #   + shaping_coef · Δconnectivity   (anti-self-trap)
+            #   + length_reward_coef · fill       on apples (rewards LENGTH)
+            #   − step_penalty                    per step  (rewards GROWTH RATE)
             shaped = rewards + shaping_coef * env.last_shaping
+            if length_reward_coef:
+                ate = (rewards == 1.0).astype(np.float32)
+                shaped = shaped + length_reward_coef * ate * (env.lengths() / cells)
+            if step_penalty:
+                shaped = shaped - step_penalty
 
             ep_len_counters += 1
             ep_return_counters += rewards
@@ -289,6 +320,9 @@ def main():
                 pbar.write(f"\n{_C.ORANGE}⏹  interrupted — checkpointed at "
                            f"step {step:,}{_C.R}")
                 break
+
+        # Thermal guard — pause if the Mac is throttling (hot)
+        thermal.check(it, pbar.write)
 
     pbar.close()
     metrics_file.close()

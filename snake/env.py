@@ -148,6 +148,10 @@ class VectorizedSnakeEnv:
             obs[i, hr, hc, 2] = 1.0
         return obs
 
+    def lengths(self) -> np.ndarray:
+        """Current body length of each env."""
+        return np.array([len(b) for b in self.bodies], dtype=np.float32)
+
     def get_state(self, i: int) -> dict:
         """Single-env state for rendering."""
         return {

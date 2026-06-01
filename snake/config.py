@@ -23,6 +23,13 @@ DEFAULTS: dict = {
     "entropy_floor": 0.05,
     "entropy_floor_step_threshold": 10_000_000,
     "shaping_coef": 0.0,   # 0 = off; >0 enables free-space connectivity shaping
+    "length_reward_coef": 0.0,  # 0 = off; >0 scales an apple bonus by current fill (rewards LENGTH)
+    "step_penalty": 0.0,        # 0 = off; >0 small per-step cost (rewards GROWTH RATE / efficiency)
+    # Thermal guard (macOS): pause training when the CPU is throttling (hot)
+    "thermal_guard": True,
+    "thermal_check_every": 25,   # iterations between thermal checks
+    "thermal_cooldown_s": 30,    # seconds to pause when hot, before re-checking
+    "thermal_pause_limit": 90,   # pause when CPU_Speed_Limit drops below this (100 = unthrottled)
 }
 
 

@@ -32,6 +32,17 @@ typed; optional fields fall back to defaults.
 | `entropy_floor` | `0.05` | Warn if entropy drops below this early |
 | `entropy_floor_step_threshold` | `10_000_000` | …before this many steps |
 | `shaping_coef` | `0.0` | Free-space connectivity shaping weight; `0` = off (no flood-fill) |
+| `length_reward_coef` | `0.0` | Apple bonus scaled by current fill — rewards **length** (`0` = off) |
+| `step_penalty` | `0.0` | Per-step cost — rewards **growth rate** / efficiency (`0` = off) |
+| `thermal_guard` | `true` | Pause training when the CPU thermally throttles (macOS) |
+| `thermal_check_every` | `25` | Iterations between thermal checks |
+| `thermal_cooldown_s` | `30` | Seconds to pause when hot before re-checking |
+| `thermal_pause_limit` | `90` | Pause when `CPU_Speed_Limit` drops below this (100 = unthrottled) |
+
+`length_reward_coef` and `step_penalty` feed the **shaped** reward used for
+learning only; the `R` metric stays the raw apple count. Raising `gamma` toward
+1.0 (e.g. `0.999`) makes total apples — i.e. final length — the objective rather
+than *fast* scoring. See `configs/length.json`.
 
 ## One iteration
 
@@ -50,6 +61,7 @@ For `fill.json`: 128 × 256 = 32,768 steps/iter; 80M ÷ 32,768 ≈ 2,441 iterati
 | `medium.json` | 16×16 | 256 | 20M | 0.99 | off | scaling check (~1 h) |
 | `overnight.json` | 32×32 | 256 | 200M | 0.99 | off | large-grid overnight |
 | `fill.json` | 8×8 | 256 | 80M | **0.997** | off* | push toward high board fill |
+| `length.json` | 8×8 | 256 | 80M | **0.999** | off | length-objective experiment (length + growth-rate reward, higher entropy) |
 
 \* `fill.json` ships with `shaping_coef: 0.0`. The connectivity shaping was
 disabled after it halved throughput for little early benefit; re-enable by
