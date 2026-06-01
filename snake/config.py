@@ -22,6 +22,7 @@ DEFAULTS: dict = {
     "keep_videos": True,
     "entropy_floor": 0.05,
     "entropy_floor_step_threshold": 10_000_000,
+    "shaping_coef": 0.0,   # 0 = off; >0 enables free-space connectivity shaping
 }
 
 

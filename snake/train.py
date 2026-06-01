@@ -33,6 +33,8 @@ def main():
     parser.add_argument("--config", required=True)
     parser.add_argument("--run-dir", default=None)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--no-video", action="store_true",
+                        help="Skip per-checkpoint video export + timelapse (faster, weights only)")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -81,8 +83,12 @@ def main():
     _warmup(model, H, W, N)
 
     env = VectorizedSnakeEnv(H, W, N)
+    shaping_coef = cfg.get("shaping_coef", 0.0)
+    env.compute_shaping = shaping_coef > 0
     obs = env.observation()
     buf = RolloutBuffer(T, N, H, W)
+    if env.compute_shaping:
+        print(f"Free-space connectivity shaping ON (coef={shaping_coef})")
 
     # SIGINT handler — finish rollout then checkpoint
     _interrupted = [False]
@@ -108,17 +114,21 @@ def main():
             actions, log_probs, values = model.select_action(obs)
             next_obs, rewards, dones = env.step(actions)
 
+            # Raw reward drives the interpretable metric (apples eaten);
+            # shaped reward (raw + connectivity bonus) drives learning.
+            shaped = rewards + shaping_coef * env.last_shaping
+
             ep_len_counters += 1
             ep_return_counters += rewards
             for i in range(N):
                 if dones[i]:
-                    # Full episode return (sum of all rewards = food_eaten - 1)
+                    # Full episode return (sum of raw rewards = food_eaten - 1)
                     ep_rewards.append(float(ep_return_counters[i]))
                     ep_lengths.append(int(ep_len_counters[i]))
                     ep_len_counters[i] = 0
                     ep_return_counters[i] = 0.0
 
-            buf.add(obs, actions, rewards, dones, log_probs, values)
+            buf.add(obs, actions, shaped, dones, log_probs, values)
             obs = next_obs
 
         step += T * N
@@ -169,12 +179,13 @@ def main():
             ckpt.save(step, model, trainer.optimizer, all_metrics)
             print(f"  → checkpoint saved at step {step:,}")
 
-            try:
-                exporter.export_checkpoint(model, step, run_dir,
-                                           keep_videos=cfg.get("keep_videos", True))
-                print(f"  → episode video saved")
-            except Exception as e:
-                print(f"  [WARN] video export failed: {e}")
+            if not args.no_video:
+                try:
+                    exporter.export_checkpoint(model, step, run_dir,
+                                               keep_videos=cfg.get("keep_videos", True))
+                    print(f"  → episode video saved")
+                except Exception as e:
+                    print(f"  [WARN] video export failed: {e}")
 
             next_ckpt += cfg["checkpoint_every"]
 
@@ -184,11 +195,12 @@ def main():
     metrics_file.close()
 
     # Timelapse
-    print("Assembling timelapse...")
-    tl = exporter.assemble_timelapse(run_dir, fps=24,
-                                      keep_videos=cfg.get("keep_videos", True))
-    if tl:
-        print(f"Timelapse: {tl}")
+    if not args.no_video:
+        print("Assembling timelapse...")
+        tl = exporter.assemble_timelapse(run_dir, fps=24,
+                                          keep_videos=cfg.get("keep_videos", True))
+        if tl:
+            print(f"Timelapse: {tl}")
 
     print(f"Done. Run dir: {run_dir}")
 

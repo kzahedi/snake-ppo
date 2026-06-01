@@ -26,6 +26,12 @@ class VectorizedSnakeEnv:
         self.food = np.zeros((N, 2), dtype=np.int32)
         self.alive = np.ones(N, dtype=np.bool_)
 
+        # Reward shaping: when enabled, last_shaping[i] holds the per-step change
+        # in free-space connectivity Φ (fraction of free cells reachable from the
+        # head). Positive = opened space, negative = fragmented/trapped space.
+        self.compute_shaping = False
+        self.last_shaping = np.zeros(N, dtype=np.float32)
+
         self._init_all()
 
     # ------------------------------------------------------------------
@@ -55,6 +61,7 @@ class VectorizedSnakeEnv:
         """actions: int array (N,) in {0,1,2} — left/straight/right."""
         rewards = np.zeros(self.N, dtype=np.float32)
         dones = np.zeros(self.N, dtype=np.bool_)
+        self.last_shaping[:] = 0.0
 
         new_dirs = (self.dirs + _REL_OFFSET[actions]) % 4
 
@@ -69,6 +76,9 @@ class VectorizedSnakeEnv:
             nr = head[0] + _DR[d]
             nc = head[1] + _DC[d]
             new_head = (nr, nc)
+
+            phi_before = (self._connectivity(self.body_sets[i], head)
+                          if self.compute_shaping else 0.0)
 
             # Wall collision
             if nr < 0 or nr >= self.H or nc < 0 or nc >= self.W:
@@ -101,16 +111,29 @@ class VectorizedSnakeEnv:
                 removed = self.bodies[i].pop()
                 self.body_sets[i].discard(removed)
 
+            if self.compute_shaping:
+                phi_after = self._connectivity(self.body_sets[i], new_head)
+                self.last_shaping[i] = phi_after - phi_before
+
         return self.observation(), rewards, dones
 
     def observation(self) -> np.ndarray:
-        """Returns float32 array (N, H, W, 3): body/food/head channels."""
+        """Returns float32 array (N, H, W, 3): body-age / food / head channels.
+
+        Channel 0 encodes segment age as time-until-vacated, normalised to
+        (0, 1]: head = 1.0 (stays longest), tail ≈ 1/len (vacates next step).
+        This lets the policy reason about which cells free up soon — the key
+        signal for safe late-game (near-Hamiltonian) play.
+        """
         obs = np.zeros((self.N, self.H, self.W, 3), dtype=np.float32)
         for i in range(self.N):
-            for r, c in self.bodies[i]:
-                obs[i, r, c, 0] = 1.0
+            body = self.bodies[i]
+            n = len(body)
+            for j, (r, c) in enumerate(body):
+                # j=0 is head; cell vacates in (n - j) steps
+                obs[i, r, c, 0] = (n - j) / n
             obs[i, self.food[i, 0], self.food[i, 1], 1] = 1.0
-            hr, hc = self.bodies[i][0]
+            hr, hc = body[0]
             obs[i, hr, hc, 2] = 1.0
         return obs
 
@@ -175,3 +198,28 @@ class VectorizedSnakeEnv:
                 if (r, c) not in occupied:
                     self.food[i] = [r, c]
                     return
+
+    def _connectivity(self, body_set: set, head: tuple) -> float:
+        """Fraction of free cells reachable from the head via 4-connectivity.
+
+        1.0 = all free space is one region the snake can still reach (safe);
+        < 1.0 = the snake has fragmented the board, sealing off free cells
+        it can no longer get to (a trap in the making).
+        """
+        H, W = self.H, self.W
+        total_free = H * W - len(body_set)
+        if total_free <= 0:
+            return 1.0
+        seen = {head}
+        queue = deque([head])
+        reached = 0
+        while queue:
+            r, c = queue.popleft()
+            for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                nr, nc = r + dr, c + dc
+                if (0 <= nr < H and 0 <= nc < W
+                        and (nr, nc) not in seen and (nr, nc) not in body_set):
+                    seen.add((nr, nc))
+                    reached += 1
+                    queue.append((nr, nc))
+        return reached / total_free
