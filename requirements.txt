@@ -3,3 +3,4 @@ moderngl>=0.3.0
 pygame>=2.6.0
 imageio[ffmpeg]>=2.37.0
 numpy>=2.0.0
+tqdm>=4.66.0

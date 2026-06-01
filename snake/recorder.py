@@ -32,6 +32,13 @@ class VideoExporter:
 
         return str(clean_path), str(heat_path)
 
+    def export_preview(self, model, run_dir):
+        """Render one greedy episode of the CURRENT policy to a single rolling
+        preview.mp4 (overwritten each call) — a lightweight live progress view."""
+        out_path = Path(run_dir) / "preview.mp4"
+        self._render_episode(model, str(out_path), heatmap=False)
+        return str(out_path)
+
     def assemble_timelapse(self, run_dir, fps: int = 24, keep_videos: bool = True):
         """Stitch first frame of each checkpoint video into a timelapse."""
         videos_dir = Path(run_dir) / "videos"

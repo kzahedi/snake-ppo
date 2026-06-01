@@ -49,7 +49,20 @@ python -m snake.train --config configs/overnight.json  # 32×32, 200M steps (~ov
 ```
 
 Each run creates `runs/<timestamp>/` with `checkpoints/`, `videos/`, `metrics.jsonl`,
-and a final `timelapse.mp4`. Resume an interrupted run with `--resume`. `Ctrl+C`
+and a final `timelapse.mp4`. A live tqdm progress bar shows reward, episode length,
+entropy, and throughput.
+
+Training flags:
+
+| Flag | Effect |
+|------|--------|
+| `--resume` | Continue from the latest checkpoint in `--run-dir` |
+| `--no-video` | Skip per-checkpoint video archive + timelapse (faster) |
+| `--no-preview` | Disable the rolling `preview.mp4` |
+
+A rolling **`preview.mp4`** of the *current* policy is rendered every N iterations
+(every 1000 for long runs, ~10 previews otherwise) and overwritten in place — a
+lightweight way to eyeball progress mid-run even with `--no-video`. `Ctrl+C`
 checkpoints cleanly before exiting.
 
 ### Watch a trained policy
