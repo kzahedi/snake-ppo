@@ -109,11 +109,28 @@ snake/
 
 ## How it works
 
-The snake sees a 3-channel grid (body / food / head). The CNN maps that to a policy
+The snake sees a 3-channel grid (body-age / food / head). The CNN maps that to a policy
 over **relative** moves — making U-turns physically impossible, which kills off a whole
 class of trivial deaths and produces smoother, more "meditative" trajectories as
 training converges. On large grids the policy gradually rediscovers Hamiltonian-style
 sweeping loops purely from the `+1 food / −1 death` reward.
+
+## Documentation
+
+Full docs live in [`docs/`](docs/):
+
+| Doc | Covers |
+|-----|--------|
+| [architecture](docs/architecture.md) | System overview, data flow, module map |
+| [environment](docs/environment.md) | State, observation channels, actions, reward, collisions, shaping |
+| [algorithm](docs/algorithm.md) | PPO: network, GAE, clipped objective, the update |
+| [training](docs/training.md) | Pipeline, CLI, checkpoints, metrics, rolling preview |
+| [visualization](docs/visualization.md) | Renderer, watch mode, policy panel, plots, video export |
+| [configuration](docs/configuration.md) | Every config field + the shipped presets |
+
+Design rationale (why MLX, relative actions, the CNN, etc.) is recorded in the
+OpenSpec change at [`openspec/changes/snake-ppo/`](openspec/changes/snake-ppo/).
+Open questions and future directions are collected in [`IDEAS.md`](IDEAS.md).
 
 ## License
 
