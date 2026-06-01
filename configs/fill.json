@@ -15,7 +15,7 @@
   "checkpoint_every": 1000000,
   "render_resolution": 400,
   "keep_videos": true,
-  "shaping_coef": 0.05,
+  "shaping_coef": 0.0,
   "entropy_floor": 0.02,
   "entropy_floor_step_threshold": 20000000
 }

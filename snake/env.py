@@ -31,6 +31,9 @@ class VectorizedSnakeEnv:
         # head). Positive = opened space, negative = fragmented/trapped space.
         self.compute_shaping = False
         self.last_shaping = np.zeros(N, dtype=np.float32)
+        # Cached connectivity Φ per env: the post-move Φ of step t is the
+        # pre-move Φ of step t+1, so we only flood-fill once per step.
+        self._conn = np.full(N, np.nan, dtype=np.float32)
 
         self._init_all()
 
@@ -77,8 +80,12 @@ class VectorizedSnakeEnv:
             nc = head[1] + _DC[d]
             new_head = (nr, nc)
 
-            phi_before = (self._connectivity(self.body_sets[i], head)
-                          if self.compute_shaping else 0.0)
+            if self.compute_shaping:
+                phi_before = self._conn[i]
+                if np.isnan(phi_before):
+                    phi_before = self._connectivity(self.body_sets[i], head)
+            else:
+                phi_before = 0.0
 
             # Wall collision
             if nr < 0 or nr >= self.H or nc < 0 or nc >= self.W:
@@ -114,6 +121,7 @@ class VectorizedSnakeEnv:
             if self.compute_shaping:
                 phi_after = self._connectivity(self.body_sets[i], new_head)
                 self.last_shaping[i] = phi_after - phi_before
+                self._conn[i] = phi_after
 
         return self.observation(), rewards, dones
 
@@ -180,6 +188,7 @@ class VectorizedSnakeEnv:
         self.bodies[i] = body
         self.body_sets[i] = body_set
         self.dirs[i] = d
+        self._conn[i] = np.nan   # invalidate cached connectivity
         self._place_food(i)
 
     def _place_food(self, i: int):
