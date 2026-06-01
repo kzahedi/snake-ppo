@@ -34,10 +34,12 @@ class VideoExporter:
 
     def export_preview(self, model, run_dir):
         """Render one greedy episode of the CURRENT policy to a single rolling
-        preview.mp4 (overwritten each call) — a lightweight live progress view."""
+        preview.mp4 (overwritten each call) — a lightweight live progress view.
+        Returns the episode summary dict (reason, length, apples, steps)."""
         out_path = Path(run_dir) / "preview.mp4"
-        self._render_episode(model, str(out_path), heatmap=False)
-        return str(out_path)
+        info = self._render_episode(model, str(out_path), heatmap=False)
+        info["path"] = str(out_path)
+        return info
 
     def assemble_timelapse(self, run_dir, fps: int = 24, keep_videos: bool = True):
         """Stitch first frame of each checkpoint video into a timelapse."""
@@ -82,19 +84,32 @@ class VideoExporter:
     # Internal
     # ------------------------------------------------------------------
 
-    def _render_episode(self, model, out_path: str, heatmap: bool = False):
+    def _render_episode(self, model, out_path: str, heatmap: bool = False) -> dict:
+        """Render one greedy episode. Plays until the snake dies (collision) or
+        stalls — defined as going `2 × cells` steps without eating, long enough
+        to let it solve the board but short enough to cut off endless loops.
+
+        Returns {"reason", "length", "apples", "steps"}.
+        """
+        import mlx.core as mx
         H = W = self.grid_size
-        env = VectorizedSnakeEnv(H, W, N=1)
+        env = VectorizedSnakeEnv(H, W, N=1, auto_reset=False)
         renderer = SnakeRenderer(H, W, resolution=self.resolution, mode="offscreen")
         obs = env.observation()
         t = 0.0
 
+        loop_threshold = 2 * H * W       # steps allowed between apples
+        steps_since_food = 0
+        apples = 0
+        reason = "cap"
+        step_i = 0
+
         writer = imageio.get_writer(out_path, fps=self.fps,
                                     codec="libx264", quality=8,
+                                    macro_block_size=1,
                                     output_params=["-crf", "18"])
 
         for step_i in range(self.max_steps):
-            import mlx.core as mx
             x = mx.array(obs)
             probs, _ = model(x)
             mx.eval(probs)
@@ -102,13 +117,33 @@ class VideoExporter:
 
             state = env.get_state(0)
             vgrid = model.value_grid(state) if heatmap else None
-            frame = renderer.render_frame(state, time=t, value_grid=vgrid)
-            writer.append_data(frame)
+            writer.append_data(renderer.render_frame(state, time=t, value_grid=vgrid))
 
             obs, rewards, dones = env.step(actions)
             t += 1.0 / self.fps
-            if dones[0]:
+
+            if rewards[0] == 1.0:
+                apples += 1
+                steps_since_food = 0
+            else:
+                steps_since_food += 1
+
+            if not env.alive[0]:                      # collision death
+                reason = env.death_cause[0] or "crash"
+                dstate = env.get_state(0)
+                dgrid = model.value_grid(dstate) if heatmap else None
+                for _ in range(max(1, self.fps // 3)):  # hold the red death frame
+                    writer.append_data(renderer.render_frame(dstate, time=t,
+                                                             value_grid=dgrid, dead=True))
                 break
+
+            if steps_since_food >= loop_threshold:    # stalled / looping
+                reason = "stalled"
+                break
+        else:
+            reason = "cap"
 
         writer.close()
         renderer.close()
+        return {"reason": reason, "length": len(env.bodies[0]),
+                "apples": apples, "steps": step_i + 1}

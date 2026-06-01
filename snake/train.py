@@ -124,7 +124,9 @@ def main():
         grid_size=H,
         resolution=cfg.get("render_resolution", 800),
         fps=30,
-        max_steps=H * W * 4,
+        # Generous hard cap so a full board solve fits; episodes actually end on
+        # death or on the 2×cells no-food stall check inside _render_episode.
+        max_steps=H * W * H * W,
     )
 
     step = 0
@@ -256,9 +258,13 @@ def main():
         # Rolling preview video (overwrites preview.mp4)
         if preview_every and it % preview_every == 0:
             try:
-                exporter.export_preview(model, run_dir)
-                pbar.write(f"  {_C.CYAN}▸ preview updated{_C.R} "
-                           f"{_C.GREY}(iter {it:,}, R={mean_reward:.2f}){_C.R}")
+                info = exporter.export_preview(model, run_dir)
+                fill = 100.0 * info["length"] / (H * W)
+                pbar.write(
+                    f"  {_C.CYAN}▸ preview{_C.R} {_C.GREY}iter {it:,}: "
+                    f"ended by {info['reason']} at length {info['length']} "
+                    f"({fill:.0f}% fill), {info['apples']} apples, "
+                    f"{info['steps']} steps{_C.R}")
             except Exception as e:
                 pbar.write(f"  {_C.GREY}[warn] preview failed: {e}{_C.R}")
 

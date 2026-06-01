@@ -25,6 +25,7 @@ class VectorizedSnakeEnv:
         self.dirs = np.zeros(N, dtype=np.int32)
         self.food = np.zeros((N, 2), dtype=np.int32)
         self.alive = np.ones(N, dtype=np.bool_)
+        self.death_cause = [None] * N   # "wall" | "self" | None (per env)
 
         # Reward shaping: when enabled, last_shaping[i] holds the per-step change
         # in free-space connectivity Φ (fraction of free cells reachable from the
@@ -91,6 +92,7 @@ class VectorizedSnakeEnv:
             if nr < 0 or nr >= self.H or nc < 0 or nc >= self.W:
                 rewards[i] = -1.0
                 dones[i] = True
+                self.death_cause[i] = "wall"
                 self._die(i)
                 continue
 
@@ -103,6 +105,7 @@ class VectorizedSnakeEnv:
                 if new_head != tail or eating:
                     rewards[i] = -1.0
                     dones[i] = True
+                    self.death_cause[i] = "self"
                     self._die(i)
                     continue
 
@@ -189,6 +192,7 @@ class VectorizedSnakeEnv:
         self.body_sets[i] = body_set
         self.dirs[i] = d
         self._conn[i] = np.nan   # invalidate cached connectivity
+        self.death_cause[i] = None
         self._place_food(i)
 
     def _place_food(self, i: int):
