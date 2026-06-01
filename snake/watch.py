@@ -137,7 +137,6 @@ def main():
                 vgrid = model.value_grid(state) if args.heatmap else None
                 renderer.show(state, time=t, value_grid=vgrid, dead=True)
                 print(f"  [crash] died after {ep_step} steps")
-                time.sleep(0.7)
 
             if crashed or looping or timed_out:
                 if looping:
