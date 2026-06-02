@@ -119,7 +119,10 @@ class VectorizedSnakeEnv:
                 self._place_food(i)
             else:
                 removed = self.bodies[i].pop()
-                self.body_sets[i].discard(removed)
+                # In the tail-follow case new_head == the popped tail cell, which
+                # is now the head — still occupied, so don't drop it from the set.
+                if removed != new_head:
+                    self.body_sets[i].discard(removed)
 
             if self.compute_shaping:
                 phi_after = self._connectivity(self.body_sets[i], new_head)
