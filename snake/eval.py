@@ -74,6 +74,20 @@ class _NetAgent:
         return int(np.array(probs).argmax(axis=-1)[0])
 
 
+class _QNetAgent:
+    """Greedy wrapper around a trained DQN Q-network checkpoint."""
+    def __init__(self, run_dir, H, W, checkpoint="latest"):
+        from snake.dqn import QNetwork
+        from snake.checkpoint import CheckpointManager
+        self.model = QNetwork(H, W)
+        self.step = CheckpointManager(run_dir).load_weights_into(self.model, checkpoint)
+        self.name = f"dqn({run_dir.rstrip('/').split('/')[-1]})"
+
+    def act(self, env):
+        q = self.model.q_values(env.observation())
+        return int(q.argmax(axis=-1)[0])
+
+
 def _make_baseline(name, H, W):
     from snake.baselines import HamiltonianAgent, GreedyAStarAgent, FloodFillAgent
     table = {a.name: a for a in (HamiltonianAgent, GreedyAStarAgent, FloodFillAgent)}
@@ -88,6 +102,8 @@ def main():
     p.add_argument("--episodes", type=int, default=50)
     p.add_argument("--ppo", action="append", default=[],
                    help="run dir of a trained PPO policy (repeatable)")
+    p.add_argument("--dqn", action="append", default=[],
+                   help="run dir of a trained DQN policy (repeatable)")
     p.add_argument("--baselines", default="hamiltonian,greedy-astar,flood-fill")
     p.add_argument("--seed", type=int, default=0)
     args = p.parse_args()
@@ -96,6 +112,8 @@ def main():
     agents = []
     for rd in args.ppo:
         agents.append(_NetAgent(rd, H, W))
+    for rd in args.dqn:
+        agents.append(_QNetAgent(rd, H, W))
     for name in [b for b in args.baselines.split(",") if b]:
         agents.append(_make_baseline(name, H, W))
 
