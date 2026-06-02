@@ -11,6 +11,19 @@ and surprisingly deep little game.
 ![mlx](https://img.shields.io/badge/MLX-Apple_GPU-ff6b35)
 ![python](https://img.shields.io/badge/python-3.13-9b72ff)
 
+## A self-taught solve
+
+<p align="center">
+  <img src="assets/solve_1_open.gif" width="32%" alt="opening" />
+  <img src="assets/solve_2_fill.gif" width="32%" alt="filling" />
+  <img src="assets/solve_3_win.gif" width="32%" alt="full-board solve" />
+</p>
+
+<p align="center"><em>Pure PPO — no hand-coded Hamiltonian cycle, no safety shield — learning to
+<b>fill the entire 8×8 board</b>. Left to right: the opening, the board filling up, and the
+final 64/64 solve. The coverage strategy was discovered entirely from a <code>+1 eat / −1 die</code>
+reward (plus a small win bonus).</em></p>
+
 ## Features
 
 - **PPO from scratch in MLX** — clipped surrogate objective, GAE, entropy bonus,

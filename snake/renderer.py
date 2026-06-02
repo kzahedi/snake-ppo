@@ -107,6 +107,12 @@ class SnakeRenderer:
         self.tail_color = np.array(tail_color, dtype=np.float32)
         self.food_color = np.array(food_color, dtype=np.float32)
         self.heatmap_opacity = heatmap_opacity
+        # Visible wall framing the play field. The framebuffer clears to the
+        # wall colour; the darker play field is drawn inset by wall_ndc, so the
+        # border the snake dies against is clearly visible.
+        self.wall_ndc = 0.05
+        self.wall_color = np.array([0.34, 0.30, 0.46], dtype=np.float32)
+        self.field_color = np.array([0.05, 0.05, 0.08], dtype=np.float32)
         self._quit = False
         self._pygame_keys = []
 
@@ -155,13 +161,25 @@ class SnakeRenderer:
     # ------------------------------------------------------------------
 
     def _cell_bounds(self, row, col, gap: float = 0.08):
-        x0f = -1.0 + 2.0 * col / self.W
-        x1f = -1.0 + 2.0 * (col + 1) / self.W
-        y1f = 1.0 - 2.0 * row / self.H
-        y0f = 1.0 - 2.0 * (row + 1) / self.H
+        # Cells map into the inset play field [-A, A], leaving a wall border.
+        A = 1.0 - self.wall_ndc
+        x0f = -A + 2.0 * A * col / self.W
+        x1f = -A + 2.0 * A * (col + 1) / self.W
+        y1f = A - 2.0 * A * row / self.H
+        y0f = A - 2.0 * A * (row + 1) / self.H
         gx = (x1f - x0f) * gap / 2
         gy = (y1f - y0f) * gap / 2
         return x0f + gx, y0f + gy, x1f - gx, y1f - gy
+
+    def _draw_solid_quad(self, x0, y0, x1, y1, color):
+        c = color
+        verts = []
+        for px, py in ((x0,y0),(x1,y0),(x0,y1),(x1,y0),(x1,y1),(x0,y1)):
+            verts += [px, py, c[0], c[1], c[2]]
+        arr = np.array(verts, dtype=np.float32)
+        self._body_vbo.orphan(arr.nbytes)
+        self._body_vbo.write(arr)
+        self._body_vao.render(moderngl.TRIANGLES, vertices=6)
 
     def _make_body_verts(self, body, dead: bool = False):
         n = len(body)
@@ -202,6 +220,11 @@ class SnakeRenderer:
         body = state["body"]
         food = state["food"]
 
+        # Play field inset inside the wall border (border = clear/wall colour).
+        A = 1.0 - self.wall_ndc
+        field = np.array([0.20, 0.03, 0.03], dtype=np.float32) if dead else self.field_color
+        self._draw_solid_quad(-A, -A, A, A, field)
+
         if body:
             bv = self._make_body_verts(body, dead=dead)
             self._body_vbo.orphan(bv.nbytes)
@@ -230,7 +253,7 @@ class SnakeRenderer:
                      dead: bool = False) -> np.ndarray:
         """Offscreen mode — returns RGB uint8 (H_px, W_px, 3)."""
         self.fbo.use()
-        self.ctx.clear(0.05, 0.05, 0.08)
+        self.ctx.clear(*self.wall_color)
         self._draw(state, time, value_grid, dead=dead)
         pixels = self.fbo.read(components=3)
         frame = np.frombuffer(pixels, dtype=np.uint8).reshape(self.res, self.res, 3)
@@ -248,9 +271,8 @@ class SnakeRenderer:
                     self._quit = True
                 self._pygame_keys.append(event.key)
 
-        bg = (0.18, 0.03, 0.03) if dead else (0.05, 0.05, 0.08)
         self.ctx.screen.use()
-        self.ctx.clear(*bg)
+        self.ctx.clear(*self.wall_color)
         self._draw(state, time, value_grid, dead=dead)
         pygame.display.flip()
 
