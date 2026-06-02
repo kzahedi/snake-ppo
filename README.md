@@ -20,9 +20,9 @@ and surprisingly deep little game.
 </p>
 
 <p align="center"><em>Pure PPO — no hand-coded Hamiltonian cycle, no safety shield — learning to
-<b>fill the entire 8×8 board</b>. Left to right: the opening, the board filling up, and the
-final 64/64 solve. The coverage strategy was discovered entirely from a <code>+1 eat / −1 die</code>
-reward (plus a small win bonus).</em></p>
+<b>fill the entire 8×8 board</b>. Left to right: the early game (small snake, open board),
+the board filling up, and the final 64/64 solve. The coverage strategy was discovered entirely
+from a <code>+1 eat / −1 die</code> reward (plus a small win bonus).</em></p>
 
 ## Features
 
