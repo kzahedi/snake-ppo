@@ -18,6 +18,7 @@ REQUIRED: dict[str, type] = {
 }
 
 DEFAULTS: dict = {
+    "algo": "ppo",   # "ppo" (clipped surrogate) or "a2c" (vanilla policy gradient)
     "render_resolution": 800,
     "keep_videos": True,
     "entropy_floor": 0.05,

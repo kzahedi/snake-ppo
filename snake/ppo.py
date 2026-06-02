@@ -86,6 +86,7 @@ class PPOTrainer:
 
     def update(self, buffer: RolloutBuffer, step: int) -> dict:
         cfg = self.cfg
+        algo = cfg.get("algo", "ppo")   # "ppo" (clipped) or "a2c" (vanilla PG)
         all_policy_loss = []
         all_value_loss = []
         all_entropy = []
@@ -104,10 +105,14 @@ class PPOTrainer:
 
                 def loss_fn(model):
                     lp, vals, ent = model.evaluate(obs_mx, act_mx)
-                    ratio = mx.exp(lp - old_lp_mx)
-                    loss1 = -adv_norm * ratio
-                    loss2 = -adv_norm * mx.clip(ratio, 1 - cfg["clip_eps"], 1 + cfg["clip_eps"])
-                    policy_loss = mx.mean(mx.maximum(loss1, loss2))
+                    if algo == "a2c":
+                        # Vanilla policy gradient (no clipping) — the A2C ablation.
+                        policy_loss = mx.mean(-adv_norm * lp)
+                    else:
+                        ratio = mx.exp(lp - old_lp_mx)
+                        loss1 = -adv_norm * ratio
+                        loss2 = -adv_norm * mx.clip(ratio, 1 - cfg["clip_eps"], 1 + cfg["clip_eps"])
+                        policy_loss = mx.mean(mx.maximum(loss1, loss2))
                     value_loss = mx.mean((vals - ret_mx) ** 2)
                     entropy_mean = mx.mean(ent)
                     total = (policy_loss
