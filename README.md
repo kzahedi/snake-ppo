@@ -23,6 +23,21 @@ and surprisingly deep little game.
 final 64/64 solve. The coverage strategy was discovered entirely from a
 <code>+1 eat / −1 die</code> reward (plus a small win bonus).</em></p>
 
+## Comparing approaches
+
+Different agents share one environment and one evaluation harness
+(`python -m snake.eval` / `python -m snake.compare`), so they can be compared
+head-to-head on solve-rate and board fill:
+
+<p align="center"><img src="assets/comparison.png" width="80%" alt="approach comparison" /></p>
+
+<p align="center"><img src="assets/behaviours.gif" width="80%" alt="behaviour comparison" /></p>
+
+<p align="center"><em>Same game, four agents. Learned <b>PPO</b> reaches the highest mean fill
+(99%); the hand-coded <b>Hamiltonian</b> cycle solves most reliably but wanders early;
+<b>greedy-A*</b> beelines to food and traps itself; <b>flood-fill</b> survives longer but
+rarely completes. (More learned methods — DQN, A2C, neuroevolution — coming.)</em></p>
+
 ## Features
 
 - **PPO from scratch in MLX** — clipped surrogate objective, GAE, entropy bonus,
