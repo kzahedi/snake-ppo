@@ -14,15 +14,14 @@ and surprisingly deep little game.
 ## A self-taught solve
 
 <p align="center">
-  <img src="assets/solve_1_open.gif" width="32%" alt="opening" />
-  <img src="assets/solve_2_fill.gif" width="32%" alt="filling" />
-  <img src="assets/solve_3_win.gif" width="32%" alt="full-board solve" />
+  <img src="assets/solve_1_open.gif" width="48%" alt="early game" />
+  <img src="assets/solve_3_win.gif" width="48%" alt="full-board solve" />
 </p>
 
 <p align="center"><em>Pure PPO — no hand-coded Hamiltonian cycle, no safety shield — learning to
-<b>fill the entire 8×8 board</b>. Left to right: the early game (small snake, open board),
-the board filling up, and the final 64/64 solve. The coverage strategy was discovered entirely
-from a <code>+1 eat / −1 die</code> reward (plus a small win bonus).</em></p>
+<b>fill the entire 8×8 board</b>. Left: the early game (small snake, open board). Right: the
+final 64/64 solve. The coverage strategy was discovered entirely from a
+<code>+1 eat / −1 die</code> reward (plus a small win bonus).</em></p>
 
 ## Features
 
