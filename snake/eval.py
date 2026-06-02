@@ -56,16 +56,24 @@ def evaluate(agent, H, W, episodes=50, max_steps=None, seed=0):
     }
 
 
+def _split_label(spec):
+    """'runs/foo:Label' -> ('runs/foo', 'Label'); 'runs/foo' -> ('runs/foo', None)."""
+    if ":" in spec:
+        path, label = spec.split(":", 1)
+        return path, label
+    return spec, None
+
+
 class _NetAgent:
     """Greedy wrapper around a trained ActorCritic checkpoint."""
-    def __init__(self, run_dir, H, W, checkpoint="latest"):
+    def __init__(self, run_dir, H, W, checkpoint="latest", label=None):
         import mlx.core as mx
         from snake.network import ActorCritic
         from snake.checkpoint import CheckpointManager
         self.mx = mx
         self.model = ActorCritic(H, W)
         self.step = CheckpointManager(run_dir).load_weights_into(self.model, checkpoint)
-        self.name = f"ppo({run_dir.rstrip('/').split('/')[-1]})"
+        self.name = label or run_dir.rstrip("/").split("/")[-1]
 
     def act(self, env):
         mx = self.mx
@@ -76,12 +84,12 @@ class _NetAgent:
 
 class _QNetAgent:
     """Greedy wrapper around a trained DQN Q-network checkpoint."""
-    def __init__(self, run_dir, H, W, checkpoint="latest"):
+    def __init__(self, run_dir, H, W, checkpoint="latest", label=None):
         from snake.dqn import QNetwork
         from snake.checkpoint import CheckpointManager
         self.model = QNetwork(H, W)
         self.step = CheckpointManager(run_dir).load_weights_into(self.model, checkpoint)
-        self.name = f"dqn({run_dir.rstrip('/').split('/')[-1]})"
+        self.name = label or run_dir.rstrip("/").split("/")[-1]
 
     def act(self, env):
         q = self.model.q_values(env.observation())
@@ -111,9 +119,11 @@ def main():
 
     agents = []
     for rd in args.ppo:
-        agents.append(_NetAgent(rd, H, W))
+        path, label = _split_label(rd)
+        agents.append(_NetAgent(path, H, W, label=label))
     for rd in args.dqn:
-        agents.append(_QNetAgent(rd, H, W))
+        path, label = _split_label(rd)
+        agents.append(_QNetAgent(path, H, W, label=label))
     for name in [b for b in args.baselines.split(",") if b]:
         agents.append(_make_baseline(name, H, W))
 
