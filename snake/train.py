@@ -42,6 +42,8 @@ def _reward_summary(cfg) -> str:
         parts.append(f"+{cfg['length_reward_coef']}·fill")
     if cfg.get("step_penalty", 0.0) > 0:
         parts.append(f"−{cfg['step_penalty']}/step")
+    if cfg.get("win_bonus", 0.0) > 0:
+        parts.append(f"+{cfg['win_bonus']} win")
     return "  ".join(parts)
 
 
@@ -104,6 +106,9 @@ def main():
                         help="Skip per-checkpoint video export + timelapse (faster, weights only)")
     parser.add_argument("--no-preview", action="store_true",
                         help="Disable the rolling preview.mp4 (rendered every N iterations)")
+    parser.add_argument("--init-weights", default=None,
+                        help="Warm-start: load weights from this .npz into a fresh run "
+                             "(new optimizer/step) — e.g. fine-tune a prior policy on a new reward")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -143,6 +148,10 @@ def main():
     )
 
     step = 0
+    if args.init_weights:
+        model.load_weights(args.init_weights)
+        print(f"{_C.GREEN}warm-started from {args.init_weights}{_C.R} "
+              f"{_C.GREY}(fresh optimizer + step counter){_C.R}")
     if args.resume:
         try:
             step = ckpt.load_weights_into(model, "latest")
@@ -157,6 +166,7 @@ def main():
     shaping_coef = cfg.get("shaping_coef", 0.0)
     length_reward_coef = cfg.get("length_reward_coef", 0.0)
     step_penalty = cfg.get("step_penalty", 0.0)
+    win_bonus = cfg.get("win_bonus", 0.0)
     cells = float(H * W)
     env.compute_shaping = shaping_coef > 0
     obs = env.observation()
@@ -195,9 +205,11 @@ def main():
     it = step // steps_per_iter   # iteration counter (survives --resume)
     ep_rewards: list[float] = []
     ep_lengths: list[int] = []
+    ep_wins: list[int] = []       # 1 if the episode filled the board, else 0
     ep_len_counters = np.zeros(N, dtype=np.int32)
     ep_return_counters = np.zeros(N, dtype=np.float32)
     best_reward = float("-inf")
+    best_winrate = 0.0
 
     pbar = tqdm(total=total_steps, initial=step, unit="step", unit_scale=True,
                 dynamic_ncols=True, smoothing=0.1,
@@ -222,14 +234,18 @@ def main():
                 shaped = shaped + length_reward_coef * ate * (env.lengths() / cells)
             if step_penalty:
                 shaped = shaped - step_penalty
+            if win_bonus:
+                shaped = shaped + win_bonus * env.last_won.astype(np.float32)
 
             ep_len_counters += 1
             ep_return_counters += rewards
+            won = env.last_won
             for i in range(N):
                 if dones[i]:
                     # Full episode return (sum of raw rewards = food_eaten - 1)
                     ep_rewards.append(float(ep_return_counters[i]))
                     ep_lengths.append(int(ep_len_counters[i]))
+                    ep_wins.append(1 if won[i] else 0)
                     ep_len_counters[i] = 0
                     ep_return_counters[i] = 0.0
 
@@ -248,8 +264,11 @@ def main():
         # Aggregate episode stats (episode return = food_eaten - 1)
         mean_reward = float(np.mean(ep_rewards)) if ep_rewards else 0.0
         mean_ep_len = float(np.mean(ep_lengths)) if ep_lengths else 0.0
+        win_rate = float(np.mean(ep_wins)) if ep_wins else 0.0
         ep_rewards.clear()
         ep_lengths.clear()
+        ep_wins.clear()
+        best_winrate = max(best_winrate, win_rate)
 
         now = time.time()
         sps = int(T * N / max(now - t_last, 1e-6))
@@ -265,6 +284,7 @@ def main():
             "policy_loss": update_metrics["policy_loss"],
             "value_loss": update_metrics["value_loss"],
             "approx_kl": update_metrics["approx_kl"],
+            "win_rate": win_rate,
         }
         metrics_file.write(json.dumps(record) + "\n")
         metrics_file.flush()
@@ -272,11 +292,12 @@ def main():
         # Live progress bar
         pbar.update(T * N)
         c = _C
+        win_str = (f"  {c.GREEN}win{c.R} {100*win_rate:.0f}%" if win_bonus else "")
         pbar.set_postfix_str(
             f"{c.GREY}it{c.R} {it:,}/{total_iters:,}  "
             f"{c.ORANGE}R{c.R} {mean_reward:6.2f}  "
             f"{c.CYAN}len{c.R} {mean_ep_len:5.1f}  "
-            f"{c.PURPLE}H{c.R} {update_metrics['mean_entropy']:.3f}  "
+            f"{c.PURPLE}H{c.R} {update_metrics['mean_entropy']:.3f}{win_str}  "
             f"{c.GREY}{sps:,} sps{c.R}"
         )
 

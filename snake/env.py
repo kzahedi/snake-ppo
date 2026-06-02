@@ -32,6 +32,8 @@ class VectorizedSnakeEnv:
         # head). Positive = opened space, negative = fragmented/trapped space.
         self.compute_shaping = False
         self.last_shaping = np.zeros(N, dtype=np.float32)
+        # Set True for the step on which an env fills the whole board (a win).
+        self.last_won = np.zeros(N, dtype=np.bool_)
         # Cached connectivity Φ per env: the post-move Φ of step t is the
         # pre-move Φ of step t+1, so we only flood-fill once per step.
         self._conn = np.full(N, np.nan, dtype=np.float32)
@@ -66,6 +68,7 @@ class VectorizedSnakeEnv:
         rewards = np.zeros(self.N, dtype=np.float32)
         dones = np.zeros(self.N, dtype=np.bool_)
         self.last_shaping[:] = 0.0
+        self.last_won[:] = False
 
         new_dirs = (self.dirs + _REL_OFFSET[actions]) % 4
 
@@ -116,6 +119,14 @@ class VectorizedSnakeEnv:
 
             if eating:
                 rewards[i] = 1.0
+                if len(self.bodies[i]) >= self.H * self.W:
+                    # Filled the whole board — a WIN. End the episode here so the
+                    # perfect solve isn't punished with the usual -1 death.
+                    dones[i] = True
+                    self.death_cause[i] = "win"
+                    self.last_won[i] = True
+                    self._die(i)
+                    continue
                 self._place_food(i)
             else:
                 removed = self.bodies[i].pop()

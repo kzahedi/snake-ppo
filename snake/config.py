@@ -25,6 +25,7 @@ DEFAULTS: dict = {
     "shaping_coef": 0.0,   # 0 = off; >0 enables free-space connectivity shaping
     "length_reward_coef": 0.0,  # 0 = off; >0 scales an apple bonus by current fill (rewards LENGTH)
     "step_penalty": 0.0,        # 0 = off; >0 small per-step cost (rewards GROWTH RATE / efficiency)
+    "win_bonus": 0.0,           # 0 = off; >0 terminal bonus for filling the whole board (rewards SOLVING)
     # Thermal guard (macOS): pause training when the CPU is throttling (hot)
     "thermal_guard": True,
     "thermal_check_every": 25,   # iterations between thermal checks
