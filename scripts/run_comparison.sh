@@ -18,8 +18,9 @@ echo "STAGE evo"   > runs/.pipeline_stage
 $RUN snake.train_evo --config configs/evo.json --run-dir runs/evo
 
 echo "STAGE compare" > runs/.pipeline_stage
-$RUN snake.compare --grid 8 --episodes 40 \
+$RUN snake.compare --grid 8 --episodes 50 \
     --ppo "runs/solve:PPO" \
+    --shielded "runs/solve:PPO+shield" \
     --ppo "runs/a2c:A2C" \
     --dqn "runs/dqn:DQN" \
     --ppo "runs/evo:Evolution"
