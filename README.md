@@ -30,10 +30,23 @@ head-to-head on solve-rate and board fill:
 
 <p align="center"><img src="assets/behaviours.gif" width="80%" alt="behaviour comparison" /></p>
 
-<p align="center"><em>Same game, four agents. Learned <b>PPO</b> reaches the highest mean fill
-(99%); the hand-coded <b>Hamiltonian</b> cycle solves most reliably but wanders early;
-<b>greedy-A*</b> beelines to food and traps itself; <b>flood-fill</b> survives longer but
-rarely completes. (More learned methods — DQN, A2C, neuroevolution — coming.)</em></p>
+<p align="center"><em>Same game, seven agents (8×8, 40 episodes each). Results:</em></p>
+
+| Agent | Type | Mean fill | Solve rate |
+|-------|------|-----------|-----------|
+| **PPO** | learned (clipped policy-gradient) | **99%** | 48% |
+| Hamiltonian cycle | hand-coded | 81% | **80%** |
+| flood-fill | hand-coded | 42% | 0% |
+| DQN | learned (value-based) | 37% | 0% |
+| greedy-A* | hand-coded | 36% | 0% |
+| A2C | learned (no clipping) | 5% | 0% |
+| Neuroevolution | gradient-free | 5% | 0% |
+
+<p align="center"><em>Takeaways: <b>PPO</b> reaches the highest fill of any agent (99%, above even the
+hand-coded Hamiltonian), and is the only learned method that solves the board. <b>DQN</b> learns to
+eat but not to complete. <b>A2C</b> (PPO minus the clipping) collapses — clipping is what makes PPO
+stable. <b>Neuroevolution</b> barely moves at this budget — gradient-free search is far less
+sample-efficient. All learned methods trained on the same 20M-step budget.</em></p>
 
 ## Features
 
