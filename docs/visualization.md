@@ -18,10 +18,11 @@ curves, policy internals). Plus offline **video export**.
 
 | Element | Shader behaviour |
 |---------|-----------------|
+| Wall | the framebuffer clears to a stone-purple wall colour; the play field is drawn inset, so the boundary the snake dies against is visible |
 | Snake body | per-segment quads, vertex colour interpolated **head → tail** (bright cyan → dark blue) |
 | Food | point quad with a radial **glow** that pulses via a `sin(time)` uniform |
 | Value heatmap | per-cell quads coloured by V(s) (cool→warm), blended over the game at ~40% opacity |
-| Death | body recoloured **red** + dark-red background for one frame on a crash |
+| Death | body recoloured **red** + dark-red field for one frame on a crash (a win keeps the normal colours) |
 
 `render_frame(state, time, value_grid, dead)` → NumPy frame (offscreen).
 `show(state, time, value_grid, dead)` → draws to the window and swaps buffers.

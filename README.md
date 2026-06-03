@@ -7,6 +7,9 @@ visualisation of *what the network is thinking* while it plays.
 Built as a testbed for exploring the M4's GPU and Neural Engine through a fun, visual,
 and surprisingly deep little game.
 
+> 📍 **Resuming / picking up?** [`STATUS.md`](STATUS.md) has the current project state,
+> run inventory, and exact resume commands.
+
 ![grid](https://img.shields.io/badge/grids-8×8_→_32×32-00ffcc)
 ![mlx](https://img.shields.io/badge/MLX-Apple_GPU-ff6b35)
 ![python](https://img.shields.io/badge/python-3.13-9b72ff)

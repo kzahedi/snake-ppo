@@ -11,9 +11,13 @@ rendering, video export, and live policy visualisation.
 | [architecture.md](architecture.md) | System overview, data flow, module map |
 | [environment.md](environment.md) | The Snake env: state, observation, actions, reward, collisions, shaping |
 | [algorithm.md](algorithm.md) | PPO: actor-critic network, GAE, clipped objective, the update loop |
+| [approaches.md](approaches.md) | All agents (PPO/A2C/DQN/neuroevolution/baselines) + the comparison results |
 | [training.md](training.md) | Training pipeline, CLI, checkpoints, metrics, the rolling preview |
 | [visualization.md](visualization.md) | moderngl renderer, watch mode, policy panel, plots, video export |
 | [configuration.md](configuration.md) | Every config field, with ranges and the shipped presets |
+
+> **Resuming work?** See [`../STATUS.md`](../STATUS.md) for the current project
+> state, run inventory, and resume commands.
 
 ## Quick orientation
 

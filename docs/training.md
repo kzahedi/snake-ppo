@@ -1,6 +1,10 @@
 # Training
 
-`snake/train.py` — `python -m snake.train`.
+`snake/train.py` — `python -m snake.train` — trains **PPO** (and **A2C** via
+`algo: "a2c"`). The other approaches have their own entry points:
+`python -m snake.train_dqn` (DQN) and `python -m snake.train_evo`
+(neuroevolution). They share this doc's checkpoint/metrics/thermal conventions;
+see [approaches.md](approaches.md) for the full lineup and comparison.
 
 ## Command
 

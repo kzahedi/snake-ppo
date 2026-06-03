@@ -17,16 +17,29 @@
 snake/
 ├── config.py        Config loading + validation (required vs defaulted fields)
 ├── env.py           VectorizedSnakeEnv — N parallel games in NumPy
-├── network.py       ActorCritic — CNN policy/value net in MLX
-├── ppo.py           RolloutBuffer (GAE) + PPOTrainer (clipped update)
+├── rewards.py       Shared reward shaping (used by every trainer)
+├── network.py       ActorCritic — CNN policy/value net in MLX (PPO/A2C/evo)
+├── ppo.py           RolloutBuffer (GAE) + PPOTrainer (PPO and A2C via algo flag)
+├── dqn.py           QNetwork + ReplayBuffer + DQNTrainer (Double-DQN)
+├── evolution.py     Gradient-free policy search (fitness + mutation)
+├── baselines.py     Hamiltonian / greedy-A* / flood-fill reference agents
 ├── checkpoint.py    CheckpointManager — save/load weights + metadata
-├── renderer.py      SnakeRenderer — moderngl GLSL renderer (offscreen + window)
+├── thermal.py       ThermalGuard — pause training when the Mac throttles
+├── renderer.py      SnakeRenderer — moderngl GLSL renderer (wall border, offscreen + window)
 ├── recorder.py      VideoExporter — per-checkpoint videos, preview, timelapse
 ├── plots.py         MetricsPlot — live training-curve panel (matplotlib)
 ├── policy_panel.py  PolicyPanel — live action probs / feature maps / net diagram
-├── train.py         Training entry point (python -m snake.train)
-└── watch.py         Live watch entry point (python -m snake.watch)
+├── eval.py          Shared evaluation harness (any agent → fill% / solve-rate)
+├── compare.py       Comparison bar chart + side-by-side behaviour video
+├── train.py         PPO/A2C training entry point  (python -m snake.train)
+├── train_dqn.py     DQN training entry point       (python -m snake.train_dqn)
+├── train_evo.py     Neuroevolution entry point     (python -m snake.train_evo)
+└── watch.py         Live watch entry point         (python -m snake.watch)
 ```
+
+The learning approaches and their comparison are documented in
+[approaches.md](approaches.md); `scripts/run_comparison.sh` trains them in
+sequence and regenerates the comparison assets.
 
 Each module has a single responsibility and depends only on those below it:
 

@@ -27,6 +27,7 @@ typed; optional fields fall back to defaults.
 
 | Field | Default | Meaning |
 |-------|---------|---------|
+| `algo` | `"ppo"` | `"ppo"` (clipped surrogate) or `"a2c"` (vanilla policy gradient) |
 | `render_resolution` | `800` | Pixel size of rendered frames/videos |
 | `keep_videos` | `true` | Keep per-checkpoint videos after the timelapse |
 | `entropy_floor` | `0.05` | Warn if entropy drops below this early |
@@ -34,15 +35,40 @@ typed; optional fields fall back to defaults.
 | `shaping_coef` | `0.0` | Free-space connectivity shaping weight; `0` = off (no flood-fill) |
 | `length_reward_coef` | `0.0` | Apple bonus scaled by current fill — rewards **length** (`0` = off) |
 | `step_penalty` | `0.0` | Per-step cost — rewards **growth rate** / efficiency (`0` = off) |
+| `win_bonus` | `0.0` | Terminal bonus for filling the whole board — rewards **solving** (`0` = off) |
 | `thermal_guard` | `true` | Pause training when the CPU thermally throttles (macOS) |
 | `thermal_check_every` | `25` | Iterations between thermal checks |
 | `thermal_cooldown_s` | `30` | Seconds to pause when hot before re-checking |
 | `thermal_pause_limit` | `90` | Pause when `CPU_Speed_Limit` drops below this (100 = unthrottled) |
 
-`length_reward_coef` and `step_penalty` feed the **shaped** reward used for
-learning only; the `R` metric stays the raw apple count. Raising `gamma` toward
-1.0 (e.g. `0.999`) makes total apples — i.e. final length — the objective rather
-than *fast* scoring. See `configs/length.json`.
+The shaping terms (`shaping_coef`, `length_reward_coef`, `step_penalty`,
+`win_bonus`) feed the **shaped** reward used for learning only; the `R` metric
+stays the raw apple count. Raising `gamma` toward 1.0 (e.g. `0.999`) makes total
+apples — i.e. final length — the objective rather than *fast* scoring. See
+`configs/length.json` / `configs/solve.json`.
+
+### DQN-specific (`train_dqn`, in `configs/dqn.json`)
+
+| Field | Meaning |
+|-------|---------|
+| `replay_capacity` | Replay buffer size (transitions) |
+| `batch_size` | Mini-batch per gradient step |
+| `updates_per_iter` | Gradient updates per rollout iteration |
+| `target_sync_steps` | Env-steps between target-network syncs |
+| `learning_starts` | Env-steps of pure collection before training |
+| `eps_start` / `eps_end` / `eps_decay_steps` | ε-greedy schedule |
+
+### Neuroevolution-specific (`train_evo`, in `configs/evo.json`)
+
+| Field | Meaning |
+|-------|---------|
+| `population` / `elite` | Population size and number of elites kept |
+| `sigma` / `init_sigma` | Mutation noise (per generation / initial spread) |
+| `episodes_per_eval` | Episodes per individual when measuring fitness |
+| `generations` | Number of generations |
+
+(DQN/evo configs also include the standard required fields with dummy values so
+they pass the shared config validator; those fields are ignored by those trainers.)
 
 ## One iteration
 
@@ -62,6 +88,10 @@ For `fill.json`: 128 × 256 = 32,768 steps/iter; 80M ÷ 32,768 ≈ 2,441 iterati
 | `overnight.json` | 32×32 | 256 | 200M | 0.99 | off | large-grid overnight |
 | `fill.json` | 8×8 | 256 | 80M | **0.997** | off* | push toward high board fill |
 | `length.json` | 8×8 | 256 | 80M | **0.999** | off | length-objective experiment (length + growth-rate reward, higher entropy) |
+| `solve.json` | 8×8 | 256 | 100M | **0.999** | off | full objective: length + growth + **win bonus** (best PPO; `runs/solve`) |
+| `a2c.json` | 8×8 | 256 | 20M | 0.999 | off | A2C comparison run (`algo: a2c`) |
+| `dqn.json` | 8×8 | 64 | 20M | 0.999 | off | DQN comparison run (use `train_dqn`) |
+| `evo.json` | 8×8 | — | — | — | off | neuroevolution comparison (use `train_evo`; generation-based) |
 
 \* `fill.json` ships with `shaping_coef: 0.0`. The connectivity shaping was
 disabled after it halved throughput for little early benefit; re-enable by
