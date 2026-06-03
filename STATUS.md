@@ -18,10 +18,11 @@ _Last updated: 2026-06-03._
 
 | Agent | Type | Mean fill | Solve rate |
 |-------|------|-----------|-----------|
-| **PPO** | learned, clipped policy-gradient | **99%** | 48% |
-| Hamiltonian | hand-coded cycle | 81% | **80%** |
-| flood-fill | hand-coded | 42% | 0% |
-| DQN | learned, value-based | 37% | 0% |
+| **PPO + safety shield** | learned + flood-fill guard | **99%** | **64%** |
+| Hamiltonian | hand-coded cycle | 79% | **78%** |
+| **PPO** | learned, clipped policy-gradient | **99%** | 50% |
+| flood-fill | hand-coded | 41% | 0% |
+| DQN | learned, value-based | 36% | 0% |
 | greedy-A* | hand-coded | 36% | 0% |
 | A2C | learned, no clipping | 5% | 0% |
 | Neuroevolution | gradient-free | 5% | 0% |
@@ -74,10 +75,14 @@ python -m snake.eval --grid 8 --episodes 40 --ppo runs/solve:PPO --dqn runs/dqn:
 ## Open threads / next steps
 
 See [IDEAS.md](IDEAS.md) for the full backlog. Most likely next moves:
-1. **Resume `runs/solve`** to push the PPO solve-rate past 77%.
+1. **Push PPO+shield higher** — `shield.py` lifted the solve rate 50% → 64%; a
+   deeper-lookahead shield (it currently trusts eating moves) could approach
+   ~100%. (PPO refinement on `runs/solve` itself saturated at ~50% greedy.)
 2. **Fairer DQN/A2C** — they got 20M steps; give them more, or tune (A2C needs
    stronger entropy regularisation / lower lr to avoid the collapse).
 3. **Scale the comparison to 16×16 / 32×32** — does PPO still solve? (the open
    research question).
-4. The hybrid **safety shield** (guaranteed ~100% solve) was designed but not
-   built — pure RL reached the solve without it.
+
+Note: the PPO solve fine-tune (`runs/solve`) reached ~128M steps but the
+solve-rate **saturated at ~50% greedy** — refinement gave diminishing returns,
+so the shield (lever #1) is the productive path, not more PPO training.

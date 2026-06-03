@@ -82,6 +82,27 @@ class _NetAgent:
         return int(np.array(probs).argmax(axis=-1)[0])
 
 
+class _ShieldedNetAgent:
+    """PPO policy + safety shield: the net ranks the moves, the shield vetoes any
+    that would trap the snake (keeps the tail reachable)."""
+    def __init__(self, run_dir, H, W, checkpoint="latest", label=None):
+        import mlx.core as mx
+        from snake.network import ActorCritic
+        from snake.checkpoint import CheckpointManager
+        self.mx = mx
+        self.model = ActorCritic(H, W)
+        self.step = CheckpointManager(run_dir).load_weights_into(self.model, checkpoint)
+        self.name = label or (run_dir.rstrip("/").split("/")[-1] + "+shield")
+
+    def act(self, env):
+        from snake.shield import shielded_action
+        mx = self.mx
+        probs, _ = self.model(mx.array(env.observation()))
+        mx.eval(probs)
+        ranked = list(np.argsort(-np.array(probs)[0]).astype(int))
+        return shielded_action(env, ranked)
+
+
 class _QNetAgent:
     """Greedy wrapper around a trained DQN Q-network checkpoint."""
     def __init__(self, run_dir, H, W, checkpoint="latest", label=None):
@@ -112,6 +133,8 @@ def main():
                    help="run dir of a trained PPO policy (repeatable)")
     p.add_argument("--dqn", action="append", default=[],
                    help="run dir of a trained DQN policy (repeatable)")
+    p.add_argument("--shielded", action="append", default=[],
+                   help="run dir of a PPO policy to run WITH the safety shield (repeatable)")
     p.add_argument("--baselines", default="hamiltonian,greedy-astar,flood-fill")
     p.add_argument("--seed", type=int, default=0)
     args = p.parse_args()
@@ -124,6 +147,9 @@ def main():
     for rd in args.dqn:
         path, label = _split_label(rd)
         agents.append(_QNetAgent(path, H, W, label=label))
+    for rd in args.shielded:
+        path, label = _split_label(rd)
+        agents.append(_ShieldedNetAgent(path, H, W, label=label))
     for name in [b for b in args.baselines.split(",") if b]:
         agents.append(_make_baseline(name, H, W))
 

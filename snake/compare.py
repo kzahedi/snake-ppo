@@ -11,7 +11,8 @@ from pathlib import Path
 import numpy as np
 
 from snake.env import VectorizedSnakeEnv
-from snake.eval import evaluate, _NetAgent, _QNetAgent, _make_baseline, _split_label
+from snake.eval import (evaluate, _NetAgent, _QNetAgent, _ShieldedNetAgent,
+                        _make_baseline, _split_label)
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +136,7 @@ def main():
     p.add_argument("--episodes", type=int, default=40)
     p.add_argument("--ppo", action="append", default=[])
     p.add_argument("--dqn", action="append", default=[])
+    p.add_argument("--shielded", action="append", default=[])
     p.add_argument("--baselines", default="hamiltonian,greedy-astar,flood-fill")
     p.add_argument("--out-dir", default="assets")
     p.add_argument("--seed", type=int, default=0)
@@ -150,6 +152,9 @@ def main():
     for rd in args.dqn:
         path, label = _split_label(rd)
         agents.append(_QNetAgent(path, H, W, label=label))
+    for rd in args.shielded:
+        path, label = _split_label(rd)
+        agents.append(_ShieldedNetAgent(path, H, W, label=label))
     agents += [_make_baseline(b, H, W) for b in args.baselines.split(",") if b]
 
     print(f"Evaluating {len(agents)} agents ({args.episodes} eps each)…")

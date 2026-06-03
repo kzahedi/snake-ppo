@@ -15,9 +15,11 @@ safety shield turned out to be **unnecessary** for 8×8. Remaining threads:
 
 - ⏳ **Push the solve-rate higher** — `runs/solve` is paused at 92M / 77% solve;
   resume to climb further (`--resume`).
-- ⏳ **Hybrid: RL + safety shield** — designed but NOT built; pure RL reached the
-  solve without it. Would still be the reliable path to a *guaranteed* 100% and
-  for much larger grids.
+- ✅ **Hybrid: RL + safety shield** — built (`shield.py`): inference-time
+  flood-fill guard that vetoes self-trapping moves. Lifts PPO 50% → 64% solve
+  with no training (`--shielded` in eval/compare).
+- 🔬 **Deeper-lookahead shield** — current shield trusts eating moves (the leak);
+  a 1–2 step lookahead before trusting an eat could push solve-rate toward ~100%.
 - 🔬 **Optimized connectivity shaping** — still an option (numba-JIT the BFS,
   skip when short) if larger grids need the anti-trap signal. Off for 8×8.
 - 💡 **Curriculum** — start small, grow the grid; likely needed for 32×32.

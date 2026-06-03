@@ -25,13 +25,20 @@ relative action space.
 
 | Agent | Mean fill | Solve rate |
 |-------|-----------|-----------|
-| **PPO** | **99%** | 48% |
-| Hamiltonian | 81% | **80%** |
-| flood-fill | 42% | 0% |
-| DQN | 37% | 0% |
+| **PPO + safety shield** | **99%** | **64%** |
+| Hamiltonian | 79% | **78%** |
+| **PPO** | **99%** | 50% |
+| flood-fill | 41% | 0% |
+| DQN | 36% | 0% |
 | greedy-A* | 36% | 0% |
 | A2C | 5% | 0% |
 | Neuroevolution | 5% | 0% |
+
+**Safety shield** (`shield.py`, run with `--shielded <run_dir>`): an
+inference-time wrapper — the policy ranks the moves, the shield takes the
+highest-ranked one that keeps the snake's tail reachable (so it can never trap
+itself), trusting the policy on eating/winning moves. Adds **no training** and
+lifts PPO's solve rate 50% → 64%, the best of the learned agents.
 
 ### Reading the results
 
