@@ -40,18 +40,19 @@ head-to-head on solve-rate and board fill:
 | **PPO + safety shield** | learned + flood-fill guard | **99%** | **64%** |
 | Hamiltonian cycle | hand-coded | 79% | **78%** |
 | **PPO** | learned (clipped policy-gradient) | **99%** | 50% |
+| DQN | learned (value-based) | 66% | 0% |
 | flood-fill | hand-coded | 41% | 0% |
-| DQN | learned (value-based) | 36% | 0% |
 | greedy-A* | hand-coded | 36% | 0% |
-| A2C | learned (no clipping) | 5% | 0% |
+| A2C | learned (no clipping) | 20% | 0% |
 | Neuroevolution | gradient-free | 5% | 0% |
 
 <p align="center"><em>Takeaways: <b>PPO</b> reaches the highest fill of any agent (99%, above even the
 hand-coded Hamiltonian). Wrapping it in a <b>safety shield</b> (an inference-time flood-fill guard
 that vetoes self-trapping moves) lifts the solve rate 50% → 64% — best of the learned agents,
-closing on the Hamiltonian. <b>DQN</b> learns to eat but not to complete. <b>A2C</b> (PPO minus the
-clipping) collapses — clipping is what makes PPO stable. <b>Neuroevolution</b> barely moves at this
-budget. All learned methods trained on the same 20M-step budget; the shield adds no training.</em></p>
+closing on the Hamiltonian. <b>DQN</b>, after tuning (slower ε-decay, lower γ), learns to eat to
+66% fill but never completes. <b>A2C</b> (PPO minus the clipping) reaches ~20% but still drifts into
+entropy collapse — clipping is what makes PPO stable. <b>Neuroevolution</b> barely moves even with a
+bigger budget — gradient-free search is far less sample-efficient. The shield adds no training.</em></p>
 
 ## Features
 

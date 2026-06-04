@@ -28,10 +28,10 @@ relative action space.
 | **PPO + safety shield** | **99%** | **64%** |
 | Hamiltonian | 79% | **78%** |
 | **PPO** | **99%** | 50% |
+| DQN (tuned) | 66% | 0% |
 | flood-fill | 41% | 0% |
-| DQN | 36% | 0% |
 | greedy-A* | 36% | 0% |
-| A2C | 5% | 0% |
+| A2C (tuned) | 20% | 0% |
 | Neuroevolution | 5% | 0% |
 
 **Safety shield** (`shield.py`, run with `--shielded <run_dir>`): an
