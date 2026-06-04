@@ -7,7 +7,7 @@ visualisation of *what the network is thinking* while it plays.
 Built as a testbed for exploring the M4's GPU and Neural Engine through a fun, visual,
 and surprisingly deep little game.
 
-> 📍 **Resuming / picking up?** [`STATUS.md`](STATUS.md) has the current project state,
+> 📍 **Resuming / picking up?** [`STATE.md`](STATE.md) has the current project state,
 > run inventory, and exact resume commands.
 
 ![grid](https://img.shields.io/badge/grids-8×8_→_32×32-00ffcc)
@@ -33,7 +33,7 @@ head-to-head on solve-rate and board fill:
 
 <p align="center"><img src="assets/behaviours.gif" width="80%" alt="behaviour comparison" /></p>
 
-<p align="center"><em>Same game, seven agents (8×8, 40 episodes each). Results:</em></p>
+<p align="center"><em>Same game, eight agents (8×8, 50 episodes each). Results:</em></p>
 
 | Agent | Type | Mean fill | Solve rate |
 |-------|------|-----------|-----------|

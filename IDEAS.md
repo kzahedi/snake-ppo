@@ -77,4 +77,4 @@ safety shield turned out to be **unnecessary** for 8×8. Remaining threads:
 
 ---
 
-_Last touched: 2026-06-03 — see [STATUS.md](STATUS.md) for current project state & resume commands._
+_Last touched: 2026-06-03 — see [STATE.md](STATE.md) for current project state & resume commands._

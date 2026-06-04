@@ -16,7 +16,7 @@ rendering, video export, and live policy visualisation.
 | [visualization.md](visualization.md) | moderngl renderer, watch mode, policy panel, plots, video export |
 | [configuration.md](configuration.md) | Every config field, with ranges and the shipped presets |
 
-> **Resuming work?** See [`../STATUS.md`](../STATUS.md) for the current project
+> **Resuming work?** See [`../STATE.md`](../STATE.md) for the current project
 > state, run inventory, and resume commands.
 
 ## Quick orientation

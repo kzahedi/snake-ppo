@@ -1,4 +1,4 @@
-# Project Status — pick up here
+# Project State — pick up here
 
 _Snapshot of where the Snake-PPO project stands, so work can resume cleanly._
 _Last updated: 2026-06-04._
