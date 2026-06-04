@@ -36,7 +36,8 @@ _Last updated: 2026-06-04._
 | `runs/a2c` | A2C comparison run (tuned) | complete (30M) | ~20% fill (collapses late) |
 | `runs/dqn` | DQN comparison run (tuned) | complete (30M) | 66% fill |
 | `runs/evo` | neuroevolution comparison run | complete (600 gens) | 5% fill |
-| `runs/verify`, `runs/reward_test`, `runs/2026060*` | early dev/test runs | superseded | — |
+
+(Superseded early dev/test runs were pruned to save disk; `runs/` is gitignored.)
 
 The two PPO checkpoints (`runs/solve`, `runs/20260601_213205`) are the keepers.
 
