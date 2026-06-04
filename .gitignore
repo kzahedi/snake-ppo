@@ -14,3 +14,9 @@ venv/
 # Editor
 .vscode/
 .idea/
+
+# Scheduler / session artifacts
+.claude/scheduled_tasks.lock
+
+# Comparison source video (the committed GIF is derived from it; mp4 is large)
+assets/behaviours.mp4

@@ -40,12 +40,18 @@ _Last updated: 2026-06-04._
 
 The two PPO checkpoints (`runs/solve`, `runs/20260601_213205`) are the keepers.
 
+> **Config note:** `configs/solve.json` currently holds **refinement-mode**
+> settings (`entropy_coef 0.004`, `lr 1e-4`, 200M steps) — gentle, for *resuming*
+> a converged policy. The original *from-scratch* run that produced the 99%-fill
+> policy used `entropy_coef 0.015`, `lr 2.5e-4` (preserved in
+> `runs/solve/config.json`). Use the higher values to train solve from scratch.
+
 ## Resume / re-run commands
 
 ```bash
 conda activate snake
 
-# Resume the PPO solve fine-tune from step 92M (push solve-rate higher)
+# Resume the PPO solve fine-tune from the latest checkpoint (refinement mode)
 python -m snake.train --config configs/solve.json --run-dir runs/solve --no-video --resume
 
 # Watch the best policy play (with the policy panel / value heatmap)
